@@ -1,3 +1,10 @@
+/* File: tutorial.cu
+ * ------------
+ * This file contains implementations and invokations of several CUDA examples
+ * where each one showcases a new concept. 
+ */
+
+
 #include <stdio.h>
 #include <cstdlib>
 #include <iostream>
@@ -102,9 +109,32 @@ __global__ void parameterDemo(
     printf("Thread %d:\n"
            "  arrayValue[%d]: %d (modified)\n",
            idx, idx, arrayValue[idx]);
-    
-    
+
 }
+
+
+// Simple *correc* synchronization example
+__global__ void correctSync(int *data) {
+    int tid = threadIdx.x;  // using 1D blocking 
+
+    // print current threadIdx 
+    printf("Thread %d\n", tid);
+    
+    // First half of threads write
+    if (tid < 3) {
+        data[tid] = (tid + 1) * 1;
+    }
+    
+    // Wait for all writes to complete
+    __syncthreads();
+    
+    // Second half of threads read and modify
+    if (tid >= 3) {
+        // Read value from corresponding thread in first half and multiply it by 11 
+        data[tid] = data[tid - 3] * 11;
+    }
+}
+
 
 
 
@@ -117,7 +147,7 @@ int main() {
     std::cout << "// -----------------------------------------------------------------------------------\n";
     std::cout << "// ********* Example 0: Hello, World! Kernel ********\n";
     std::cout << "// Description: Prints \"Hello, World!\" from each thread\n";
-    std::cout << "// -----------------------------------------------------------------------------------\n";
+    std::cout << "// -----------------------------------------------------------------------------------\n\n";
     
 
     // Launch the kernel with 2 block of 4 threads
@@ -136,7 +166,7 @@ int main() {
     std::cout << "// -----------------------------------------------------------------------------------\n";
     std::cout << "// ********* Example 1: Passing multiple parameters of different types ********\n";
     std::cout << "// Description: Demonstrates passing multiple parameters of different types to a kernel\n";
-    std::cout << "// -----------------------------------------------------------------------------------\n";
+    std::cout << "// -----------------------------------------------------------------------------------\n\n";
 
     int a = 42;
     float b = 3.14f;
@@ -166,7 +196,7 @@ int main() {
     std::cout << "// -----------------------------------------------------------------------------------\n";
     std::cout << "// ********* Example 2: Showing how threads can use the same input differently ********\n";
     std::cout << "// Description: Shows how threads can use the same input differently \n";
-    std::cout << "// -----------------------------------------------------------------------------------\n";
+    std::cout << "// -----------------------------------------------------------------------------------\n\n";
     
     int x = 10;
     int y = 5;
@@ -188,7 +218,7 @@ int main() {
     std::cout << "// -----------------------------------------------------------------------------------\n";
     std::cout << "// ********* Example 3: just a quick example showing thread indexing ********\n";
     std::cout << "// Description: showcases thread indexing in the 2d (blockNum, threadNum) case \n";
-    std::cout << "// -----------------------------------------------------------------------------------\n";
+    std::cout << "// -----------------------------------------------------------------------------------\n\n";
 
     // Launch with num_blocks blocks, num_threads threads
     int num_blocks = 4;
@@ -208,7 +238,7 @@ int main() {
     std::cout << "// -----------------------------------------------------------------------------------\n";
     std::cout << "// ********* Example 4: 3D grid/block kernel example ********\n";
     std::cout << "// Description: showcases same as above but with (grid, block) dimensions in 3D for each instead \n";
-    std::cout << "// -----------------------------------------------------------------------------------\n";
+    std::cout << "// -----------------------------------------------------------------------------------\n\n";
     
     // Define 3D block dimensions
     dim3 blockDim(2, 2, 2);  // 2x2x2 threads per block = 8 threads total per block
@@ -234,7 +264,7 @@ int main() {
 
     std::cout << "// -----------------------------------------------------------------------------------\n";
     std::cout << "// ********* Example 5: Passing arrays and copying data via dynamic memory ********\n";
-    std::cout << "// -----------------------------------------------------------------------------------\n";
+    std::cout << "// -----------------------------------------------------------------------------------\n\n";
 
     // Simple value - no special handling needed
     int xx = 42;
@@ -266,10 +296,44 @@ int main() {
     // -----------------------------------------------------------------------------------
     // ********* Example 6: A simple synchronization example ********
     // we will explore how to use the previous thread to update the current thread 
+    // in this example, we 
+    // 1. First half of threads write their thread ID to global memory
+    // 2. __syncthreads() ensures all writes complete
+    // 3. Second half of threads read the value written by their corresponding thread and add 1 to it
+    // We will also show a failure case (called a race condition)
     // -----------------------------------------------------------------------------------
+
+    std::cout << "// -----------------------------------------------------------------------------------\n";
+    std::cout << "// ********* Example 6: A simple synchronization example ********\n";
+    std::cout << "// -----------------------------------------------------------------------------------\n\n";
+
+    int h_data[6] = {1,2,3,4,5,6};
+    int *d_data;  // pointer we will use to copy over host data to device 
     
+    cudaMalloc(&d_data, 6 * sizeof(int));  // sets aside n bytes of memory on CUDA device, returns pointer to that memory (pointer itself is stored on host)
+    cudaMemset(d_data, 0, 6 * sizeof(int));
 
+    // note: we don't actually need to cudaMemcpyHostToDevice since we haven't edited any memory data on host yet 
+    // just pass in the pointer reference to global memory 
 
+    // Test correct synchronization
+    printf("Testing correct synchronization:\n");
+    correctSync<<<1, 6>>>(d_data);
+    cudaMemcpy(h_data, d_data, 6 * sizeof(int), cudaMemcpyDeviceToHost);
+    
+    // Print some results from the correct version
+    for (int i = 0; i < 6; i++) {
+        if (i < 3) {
+            printf("data[%d] = %d (should be %d)\n", i, h_data[i], (i+1));
+        } else {
+            printf("data[%d] = %d (should be %d)\n", i, h_data[i], (i-2) * 11);
+        }
+    }
+    
+    // Reset data
+    cudaMemset(d_data, 0, 6 * sizeof(int));
+    
+    
     printf("\n----------------------------------------\n\n");
 
     // -----------------------------------------------------------------------------------
@@ -277,6 +341,7 @@ int main() {
     // The hello, world of CUDA. We'll see how to sum a vector in parallel.  
     // -----------------------------------------------------------------------------------
 
+    // printf("\n----------------------------------------\n\n");
 
     // -----------------------------------------------------------------------------------
     // ********* Example 8: What type of speedup do we get from the parallel vector summation? ********
@@ -284,7 +349,17 @@ int main() {
     // -----------------------------------------------------------------------------------
 
 
+    // printf("\n----------------------------------------\n\n");
     
-    printf("\n----------------------------------------\n\n");
+    // -----------------------------------------------------------------------------------
+    // ********* Example 9: Shared and global memory ********
+    // GPU memory is accessible on a per-thread (local, stack), per-block (shared), and per-device (global) basis.
+    // We'll explore each one. 
+    // -----------------------------------------------------------------------------------
+
+
+
+    
+    // printf("\n----------------------------------------\n\n");
     return 0;
 }
