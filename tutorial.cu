@@ -126,7 +126,7 @@ __global__ void correctSync(int *data) {
     }
     
     // Wait for all writes to complete
-    __syncthreads();
+    __syncthreads();  // comment this line out to force a race condition
     
     // Second half of threads read and modify
     if (tid >= 3) {
@@ -307,7 +307,7 @@ int main() {
     std::cout << "// ********* Example 6: A simple synchronization example ********\n";
     std::cout << "// -----------------------------------------------------------------------------------\n\n";
 
-    int h_data[6] = {1,2,3,4,5,6};
+    int h_data[6] = {0};  // needs to be > 32 otherwise all threads will just operate in warp size lockstep  
     int *d_data;  // pointer we will use to copy over host data to device 
     
     cudaMalloc(&d_data, 6 * sizeof(int));  // sets aside n bytes of memory on CUDA device, returns pointer to that memory (pointer itself is stored on host)
@@ -331,7 +331,7 @@ int main() {
     }
     
     // Reset data
-    cudaMemset(d_data, 0, 6 * sizeof(int));
+    cudaMemset(d_data, 0, 256 * sizeof(int));
     
     
     printf("\n----------------------------------------\n\n");
@@ -363,3 +363,4 @@ int main() {
     // printf("\n----------------------------------------\n\n");
     return 0;
 }
+
