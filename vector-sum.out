@@ -1,0 +1,36 @@
+root@c56328d897e0:/workspace/sandbox# ./vec 
+
+First 5 elements of the arrays:
+Index 0: A=1, B=10
+Index 1: A=2, B=20
+Index 2: A=3, B=30
+Index 3: A=4, B=40
+Index 4: A=5, B=50
+Thread Configuration:
+Threads per block: 512
+Number of blocks: 1953125
+Total threads: 1000000000
+Array size: 1000000000
+
+------------------------------------------
+
+Results for vector addition of 1000000000 elements:
+CUDA Time    : 2832.162 ms
+Only kernel execution Time  : 57.655 ms
+Sequential Time: 3046.576 ms
+Speedup       : 1.08x
+Only kernel Speedup  : 52.84x
+Results match : Yes
+------------------------------------------
+
+First 10 elements as sample:
+Index 0: CUDA=11, Sequential=11
+Index 1: CUDA=22, Sequential=22
+Index 2: CUDA=33, Sequential=33
+Index 3: CUDA=44, Sequential=44
+Index 4: CUDA=55, Sequential=55
+Index 5: CUDA=66, Sequential=66
+Index 6: CUDA=77, Sequential=77
+Index 7: CUDA=88, Sequential=88
+Index 8: CUDA=99, Sequential=99
+Index 9: CUDA=110, Sequential=110
