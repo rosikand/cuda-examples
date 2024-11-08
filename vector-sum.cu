@@ -3,7 +3,7 @@
 #include <iostream>
 
 // Kernel function to print "Hello, World!" from each thread
-__global__ void vectorSumKernel(int* A, int* B, int* C, int n) {
+__global__ void vectorSumKernel(const int* A, const int* B, const int* C, int n) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (idx < n) {
@@ -31,7 +31,6 @@ int main() {
 
     int* c_ptr;
     cudaMalloc(&c_ptr, n * sizeof(int));
-    cudaMemcpy(c_ptr, C, n * sizeof(int), cudaMemcpyHostToDevice);
 
     // Launch the kernel with 1 block of 10 threads
     vectorSumKernel<<<1, 10>>>(a_ptr, b_ptr, c_ptr, n);
@@ -54,4 +53,3 @@ int main() {
 
     return 0;
 }
-
